@@ -109,7 +109,7 @@ See `DESIGN.md` for the full spec, including the research basis for each design 
 
 ## Acknowledgments
 
-BATON was built and tested on GPU infrastructure provided by Runpod, our compute sponsor. This
+BATON was built and tested on GPU infrastructure provided in collaboration with Runpod. This
 particular tool doesn't itself need a GPU to run, but it grew out of the same development
 environment as the rest of Open Source Films' pipeline tooling, which does.
 
