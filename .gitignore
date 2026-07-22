@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*_draft*.py
+.cache/
+
+# local RTFM index, if a user builds one
+.rtfm/
+
+# Claude Code settings files often carry plaintext API keys in the env
+# block — never stage/commit these or a backup/proposed variant of one.
+settings.json
+settings.json.*
+
+# per-adopting-project runtime audit log (rotates locally, not source)
+logs/
