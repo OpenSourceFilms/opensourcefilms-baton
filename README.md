@@ -74,6 +74,10 @@ BATON is a single dependency-free Python 3 file (`baton.py`, stdlib only).
 
 4. Optional: create `<project>/.baton/probes.json` to point GPU checks at the correct venv interpreter and add arbitrary shell-command health probes.
 
+Running on a Runpod pod (or anywhere with a persistent volume + ephemeral container root, pod
+restarts, and per-project GPU venvs)? See [`RUNPOD.md`](RUNPOD.md) for where to put things so they
+survive a rebuild.
+
 ## Usage
 
 All commands are from `baton.py`'s subcommand table. No arguments implies `pickup`.
