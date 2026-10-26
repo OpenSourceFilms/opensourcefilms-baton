@@ -1023,7 +1023,11 @@ def build_pickup(root, transcript_path):
         parts.append(meta_traps)
 
     text = "\n\n".join(p for p in parts if p)
-    return clamp_chars(text, PICKUP_HARD_MAX_CHARS)
+    # BATON.md, probe status and meta traps are local text but not guaranteed
+    # secret-free. The individual transcript/pretool redactors cannot cover
+    # every assembled SessionStart/pickup section. Mask before truncating:
+    # clipping first might sever a credential and defeat pattern matching.
+    return clamp_chars(redact(text), PICKUP_HARD_MAX_CHARS)
 
 
 # ── Subcommands ──────────────────────────────────────────────────────────────
