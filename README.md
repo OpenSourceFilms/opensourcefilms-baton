@@ -97,6 +97,14 @@ trap IDs only. This avoids silently suppressing a warning the session never
 received; the hook still always allows the requested tool call. Four offline
 regressions use disposable session state and simulated tool inputs.
 
+**Malformed trap isolation:** the loader ignores JSONL records that are
+not JSON objects. During PreToolUse, a record with a malformed id, project,
+status or trigger list is skipped individually, rather than allowing a
+single bad entry to suppress all matching warnings for the session. Mixed
+lists containing valid and invalid path patterns still deliver the valid
+matches. The hook remains deliberately non-blocking and this is **not**
+a substitute for reviewing the operator-maintained trap registry.
+
 **Not implemented as BATON hooks in this published release:** `Stop`, `PostToolUse`, `PreCompact`, `PostCompact` or `SessionEnd`. In particular, the background `Stop`-based trap extractor described as a proposed/deferred phase in `DESIGN.md` is **not shipped** by this version. The design document includes historical experiments and proposals; its hook tables should not be read as a current installation list.
 
 Hook payloads and matcher behaviour depend on Claude Code's version and tool names. The captured samples in [`docs/verified_hook_payloads.jsonl`](docs/verified_hook_payloads.jsonl) are historical observations, not a guarantee for future versions. BATON is deliberately non-blocking: if it fails or a matcher does not fire, the session proceeds without BATON context. `tests/selfcheck.sh` checks the published entrypoints offline, not every Claude Code release.
