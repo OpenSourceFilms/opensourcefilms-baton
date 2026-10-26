@@ -7,12 +7,16 @@ on:
       - "baton.py"
       - "tests/**"
       - "TEMPLATE.md"
+      - "README.md"
+      - "docs/RECOVERY_DEMO.md"
   pull_request:
     paths:
       - ".github/workflows/selfcheck.yml"
       - "baton.py"
       - "tests/**"
       - "TEMPLATE.md"
+      - "README.md"
+      - "docs/RECOVERY_DEMO.md"
   workflow_dispatch:
 permissions:
   contents: read
