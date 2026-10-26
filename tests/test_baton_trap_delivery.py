@@ -104,6 +104,48 @@ class PreToolTrapDeliveryTests(unittest.TestCase):
         self.assertFalse(self.seen_file.exists())
         self.assertEqual(self.invoke().count("[TRAP "), 5)
 
+    def test_nonobject_jsonl_rows_cannot_suppress_valid_hook_warning(self):
+        source = self.work / "synthetic-traps.jsonl"
+        source.write_text("\n".join(json.dumps(t) for t in (
+            None, [], 17, "unexpected JSON string", self.traps[0],
+        )) + "\n")
+        loaded = baton.load_traps(source)
+        self.assertEqual(loaded, [self.traps[0]])
+        context = self.invoke(traps=loaded)
+        self.assertIn("[TRAP T-TEST-01]", context)
+        self.assertEqual(self.audits[0]["traps"], ["T-TEST-01"])
+
+    def test_malformed_trigger_types_cannot_hide_subsequent_valid_warnings(self):
+        def trap(tid, trigger):
+            return {
+                "id": tid, "project": "*", "class": "path",
+                "what": "synthetic", "why": "test",
+                "rule": "inspect valid warnings", "triggers": trigger,
+            }
+
+        input_traps = [
+            None,
+            ["unexpected list"],
+            trap("BAD-OBJECT", ["*.py"]),
+            trap("BAD-PATTERNS", {"paths": [None, 123]}),
+            trap("BAD-STRING-LIST", {"paths": "*.py"}),
+            trap("GOOD-MIXED", {"paths": [None, "*.py"]}),
+            self.traps[0],
+        ]
+        first = self.invoke(traps=input_traps)
+        self.assertEqual(first.count("[TRAP "), 2)
+        self.assertIn("[TRAP GOOD-MIXED]", first)
+        self.assertIn("[TRAP T-TEST-01]", first)
+        self.assertEqual(self.audits[0]["traps"], ["GOOD-MIXED", "T-TEST-01"])
+        self.assertEqual(self.invoke(traps=input_traps), "")
+
+    def test_nonobject_meta_trap_does_not_hide_valid_meta_warning(self):
+        meta = {"class": "meta", "id": "META-TEST", "project": "*",
+                "what": "check synthetic state", "rule": "verify before rerun"}
+        result = baton.render_meta_traps([None, [], 9, meta], "demo")
+        self.assertIn("[META-TEST]", result)
+        self.assertIn("verify before rerun", result)
+
     def test_pretool_redacts_secret_shaped_text_before_delivery(self):
         fake_token = "hf_" + "A" * 30
         traps = [{

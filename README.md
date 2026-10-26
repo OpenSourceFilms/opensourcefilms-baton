@@ -94,8 +94,11 @@ are recorded as seen for the session. If more than five traps match the
 same tool input, the next matching PreToolUse call delivers the remaining
 warnings in subsequent batches. Audit events likewise record delivered
 trap IDs only. This avoids silently suppressing a warning the session never
-received; the hook still always allows the requested tool call. Four offline
-regressions use disposable session state and simulated tool inputs.
+received; the hook still always allows the requested tool call. Malformed
+JSONL values that are not trap objects and non-string trigger patterns are
+ignored individually instead of suppressing other legitimate trap warnings.
+Seven offline regressions use disposable session state and simulated tool
+inputs; the active installed BATON configuration is not touched.
 
 **Not implemented as BATON hooks in this published release:** `Stop`, `PostToolUse`, `PreCompact`, `PostCompact` or `SessionEnd`. In particular, the background `Stop`-based trap extractor described as a proposed/deferred phase in `DESIGN.md` is **not shipped** by this version. The design document includes historical experiments and proposals; its hook tables should not be read as a current installation list.
 
