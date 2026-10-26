@@ -24,6 +24,34 @@ It prints lines read from the **actual** `baton pickup` and `baton hook`
 responses, then checks and reports a PASS or fails with a nonzero exit.
 GitHub Actions runs it after the existing [BATON self-check](../tests/selfcheck.sh).
 
+## Recorded terminal output
+
+The first actual GitHub-hosted execution passed on
+[26 October 2026, BATON self-check run 40309356723](https://github.com/OpenSourceFilms/opensourcefilms-baton/actions/runs/40309356723)
+(Python 3.11, Ubuntu hosted runner). Its **synthetic-interruption** step
+printed the following real process output. This excerpt omits only
+runner-generated timestamp prefixes and environment-probe lines:
+
+```text
+$ python baton.py pickup <previous synthetic transcript>
+observed: interruption context rendered from prior transcript
+$ python baton.py hook <new SessionStart synthetic payload>
+hookEventName: SessionStart
+Precedence: Tier 0 (observed reality) > BATON.md (intent) > compaction summary > everything else.
+## NOW
+[STATE: INTERRUPTED EXECUTION]
+  Active file:  /workspace/fake_project/ingest.py
+  Last action:  Bash(curl -H "Authorization: ***" https://internal.example/report && pytest tests/test_ingest.py -q)
+  Died during:  Bash(curl -H "Authorization: ***" https://internal.example/report && pytest tests/test_ingest.py -q) at 2026-07-10T10:00:20.000Z   ← no matching tool_result; likely a cap/crash death
+  Note:         previous attempt was interrupted mid-action. Verify current state before resuming.
+PASS: new-process recovery, bounded context, redaction and no raw tail
+```
+
+The paths, URLs, timestamp and credential-shaped content above come from
+**fabricated test data**. The terminal output is genuine GitHub Actions
+evidence that BATON executed against that data, **not** a live Claude Code
+session, provider token or real incident.
+
 ## What is exercised
 
 1. Create an isolated temporary Git-independent project, with a minimal
