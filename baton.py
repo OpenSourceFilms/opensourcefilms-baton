@@ -926,7 +926,11 @@ def load_traps(path=TRAPS_PATH):
                 if not line:
                     continue
                 try:
-                    traps.append(json.loads(line))
+                    entry = json.loads(line)
+                    # A malformed JSONL record must not suppress all later
+                    # valid traps by raising when callers access .get().
+                    if isinstance(entry, dict):
+                        traps.append(entry)
                 except Exception:
                     continue
     except Exception:
@@ -936,15 +940,17 @@ def load_traps(path=TRAPS_PATH):
 
 def _trap_applies_to_project(trap, project):
     p = trap.get("project", "*")
-    return p == "*" or p == project
+    return isinstance(p, str) and (p == "*" or p == project)
 
 
 def _trap_active(trap):
-    return trap.get("status", "active") not in RETIRED_STATUSES
+    status = trap.get("status", "active")
+    return isinstance(status, str) and status not in RETIRED_STATUSES
 
 
 def render_meta_traps(traps, project):
-    metas = [t for t in traps if t.get("class") == "meta" and _trap_applies_to_project(t, project) and _trap_active(t)]
+    metas = [t for t in traps if isinstance(t, dict) and t.get("class") == "meta"
+             and _trap_applies_to_project(t, project) and _trap_active(t)]
     if not metas:
         return ""
     lines = ["## TRAPS (meta — always apply)"]
@@ -961,25 +967,34 @@ def render_meta_traps(traps, project):
 
 def match_path_traps(traps, project, tool_name, tool_input):
     matches = []
-    path_val = tool_input.get("file_path", "") or tool_input.get("path", "") or ""
-    cmd_val = tool_input.get("command", "") or ""
+    if not isinstance(tool_input, dict):
+        return matches
+    path_val = tool_input.get("file_path") or tool_input.get("path") or ""
+    cmd_val = tool_input.get("command") or ""
+    path_val = path_val if isinstance(path_val, str) else ""
+    cmd_val = cmd_val if isinstance(cmd_val, str) else ""
     for t in traps:
+        # JSONL is operator-edited and may contain malformed but valid JSON.
+        # Skip that entry only: one bad trigger must not swallow all warnings.
+        if not isinstance(t, dict) or not isinstance(t.get("id"), str):
+            continue
         if t.get("class") == "meta":
             continue
         if not _trap_applies_to_project(t, project) or not _trap_active(t):
             continue
-        triggers = t.get("triggers", {}) or {}
+        triggers = t.get("triggers") or {}
+        if not isinstance(triggers, dict):
+            continue
         hit = False
-        if path_val:
-            for pat in triggers.get("paths", []):
-                if fnmatch.fnmatch(path_val, pat):
-                    hit = True
-                    break
-        if not hit and cmd_val:
-            for pat in triggers.get("commands", []):
-                if fnmatch.fnmatch(cmd_val, pat):
-                    hit = True
-                    break
+        for field, value in (("paths", path_val), ("commands", cmd_val)):
+            if hit or not value:
+                continue
+            patterns = triggers.get(field, [])
+            if not isinstance(patterns, list):
+                continue
+            if any(isinstance(pat, str) and fnmatch.fnmatch(value, pat)
+                   for pat in patterns):
+                hit = True
         if hit:
             matches.append(t)
     return matches
