@@ -125,8 +125,8 @@ echo "$out" | grep -qi "volatile" && bad "volatile probe: zero VOLATILE lines st
 rm -rf "$VOL_TESTDIR"
 
 # 10. Redaction must not reinject synthetic credential-shaped strings as session context.
-# Uses fabricated tokens and exercises the actual single-file baton.py implementation.
-$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_redaction.py' -q \
+# Includes assembled SessionStart and PreToolUse tests, all with fabricated strings.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_*redaction.py' -q \
   || bad "redaction regression tests failed"
 
 if [ "$FAIL" -eq 0 ]; then say "ALL PASS"; else say "FAILURES ABOVE"; fi
