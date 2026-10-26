@@ -78,6 +78,19 @@ Running on a Runpod pod (or anywhere with a persistent volume + ephemeral contai
 restarts, and per-project GPU venvs)? See [`RUNPOD.md`](RUNPOD.md) for where to put things so they
 survive a rebuild.
 
+## Implemented hooks and limitations
+
+The published `baton.py` implements **two Claude Code hook entrypoints**. These are the hooks configured in the installation example above:
+
+| Event | Configured matchers | BATON entrypoint | Behaviour |
+|---|---|---|---|
+| `SessionStart` | `startup`, `resume`, `clear`, `compact` | `baton hook` | Emits bounded current environment/task context in `hookSpecificOutput.additionalContext`. |
+| `PreToolUse` | `Edit`, `Write`, `Bash` | `baton pretool` | Optionally injects matching path-keyed traps. Always allows the tool call; it does not enforce policy or block execution. |
+
+**Not implemented as BATON hooks in this published release:** `Stop`, `PostToolUse`, `PreCompact`, `PostCompact` or `SessionEnd`. In particular, the background `Stop`-based trap extractor described as a proposed/deferred phase in `DESIGN.md` is **not shipped** by this version. The design document includes historical experiments and proposals; its hook tables should not be read as a current installation list.
+
+Hook payloads and matcher behaviour depend on Claude Code's version and tool names. The captured samples in [`docs/verified_hook_payloads.jsonl`](docs/verified_hook_payloads.jsonl) are historical observations, not a guarantee for future versions. BATON is deliberately non-blocking: if it fails or a matcher does not fire, the session proceeds without BATON context. `tests/selfcheck.sh` checks the published entrypoints offline, not every Claude Code release.
+
 ## Usage
 
 All commands are from `baton.py`'s subcommand table. No arguments implies `pickup`.
