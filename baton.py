@@ -926,7 +926,12 @@ def load_traps(path=TRAPS_PATH):
                 if not line:
                     continue
                 try:
-                    traps.append(json.loads(line))
+                    trap = json.loads(line)
+                    # JSONL can contain a valid JSON primitive or list that
+                    # is not a trap object. A single malformed entry must not
+                    # take down both SessionStart meta traps and PreToolUse.
+                    if isinstance(trap, dict):
+                        traps.append(trap)
                 except Exception:
                     continue
     except Exception:
@@ -944,7 +949,8 @@ def _trap_active(trap):
 
 
 def render_meta_traps(traps, project):
-    metas = [t for t in traps if t.get("class") == "meta" and _trap_applies_to_project(t, project) and _trap_active(t)]
+    metas = [t for t in traps if isinstance(t, dict) and t.get("class") == "meta"
+             and _trap_applies_to_project(t, project) and _trap_active(t)]
     if not metas:
         return ""
     lines = ["## TRAPS (meta — always apply)"]
@@ -959,28 +965,29 @@ def render_meta_traps(traps, project):
     return "\n".join(lines)
 
 
+def _trap_pattern_hit(value, patterns):
+    """Bad JSON pattern entries are ignored, not allowed to hide good traps."""
+    if not isinstance(value, str) or not value or not isinstance(patterns, list):
+        return False
+    return any(fnmatch.fnmatch(value, pat) for pat in patterns if isinstance(pat, str))
+
+
 def match_path_traps(traps, project, tool_name, tool_input):
     matches = []
+    if not isinstance(tool_input, dict):
+        return matches
     path_val = tool_input.get("file_path", "") or tool_input.get("path", "") or ""
     cmd_val = tool_input.get("command", "") or ""
     for t in traps:
-        if t.get("class") == "meta":
+        if not isinstance(t, dict) or t.get("class") == "meta":
             continue
         if not _trap_applies_to_project(t, project) or not _trap_active(t):
             continue
         triggers = t.get("triggers", {}) or {}
-        hit = False
-        if path_val:
-            for pat in triggers.get("paths", []):
-                if fnmatch.fnmatch(path_val, pat):
-                    hit = True
-                    break
-        if not hit and cmd_val:
-            for pat in triggers.get("commands", []):
-                if fnmatch.fnmatch(cmd_val, pat):
-                    hit = True
-                    break
-        if hit:
+        if not isinstance(triggers, dict):
+            continue
+        if (_trap_pattern_hit(path_val, triggers.get("paths", []))
+                or _trap_pattern_hit(cmd_val, triggers.get("commands", []))):
             matches.append(t)
     return matches
 
