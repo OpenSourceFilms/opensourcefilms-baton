@@ -106,9 +106,9 @@ class PreToolTrapDeliveryTests(unittest.TestCase):
 
     def test_nonobject_jsonl_rows_cannot_suppress_valid_hook_warning(self):
         source = self.work / "synthetic-traps.jsonl"
-        source.write_text("\\n".join(json.dumps(t) for t in (
+        source.write_text("\n".join(json.dumps(t) for t in (
             None, [], 17, "unexpected JSON string", self.traps[0],
-        )) + "\\n")
+        )) + "\n")
         loaded = baton.load_traps(source)
         self.assertEqual(loaded, [self.traps[0]])
         context = self.invoke(traps=loaded)
