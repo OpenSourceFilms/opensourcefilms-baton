@@ -134,7 +134,12 @@ $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_*redaction.py' -q \
 $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_trap_delivery.py' -q \
   || bad "PreToolUse trap-delivery regression tests failed"
 
-# 12. One malformed artifact/job probe must not suppress other valid
+# 12. Malformed JSONL entries and trigger schemas must not suppress valid
+# nearby traps. Use the actual hook with wholly synthetic, isolated JSONL.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_malformed_traps.py' -q \
+  || bad "malformed trap-isolation tests failed"
+
+# 13. One malformed artifact/job probe must not suppress other valid
 # missing/stale artifact warnings in the Tier 0 status.
 $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_artifact_probes.py' -q \
   || bad "artifact job probe isolation tests failed"
