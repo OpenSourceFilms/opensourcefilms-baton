@@ -134,5 +134,10 @@ $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_*redaction.py' -q \
 $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_trap_delivery.py' -q \
   || bad "PreToolUse trap-delivery regression tests failed"
 
+# 12. One malformed artifact/job probe must not suppress other valid
+# missing/stale artifact warnings in the Tier 0 status.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_artifact_probes.py' -q \
+  || bad "artifact job probe isolation tests failed"
+
 if [ "$FAIL" -eq 0 ]; then say "ALL PASS"; else say "FAILURES ABOVE"; fi
 exit $FAIL
