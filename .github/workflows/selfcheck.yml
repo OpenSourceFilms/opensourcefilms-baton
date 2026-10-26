@@ -7,12 +7,16 @@ on:
       - "baton.py"
       - "tests/**"
       - "TEMPLATE.md"
+      - "README.md"
+      - "docs/RECOVERY_DEMO.md"
   pull_request:
     paths:
       - ".github/workflows/selfcheck.yml"
       - "baton.py"
       - "tests/**"
       - "TEMPLATE.md"
+      - "README.md"
+      - "docs/RECOVERY_DEMO.md"
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,3 +36,5 @@ jobs:
           python-version: "3.11"
       - name: Run hook, budget, latency and probe checks
         run: bash tests/selfcheck.sh
+      - name: Record reproducible interruption and restart terminal example
+        run: python -B tests/record_recovery_demo.py

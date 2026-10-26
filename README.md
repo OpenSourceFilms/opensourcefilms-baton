@@ -107,6 +107,18 @@ All commands are from `baton.py`'s subcommand table. No arguments implies `picku
 | `baton recall <query>` | Query the archive. Currently a thin wrapper over a local RTFM search index if one is present; degrades to `(no index)` otherwise; recall is not a bundled/required component. |
 | `baton audit <days>` | Health-check BATON's own operation over the last N days: checks for truncation, stale `SUSPECT` markers, noisy traps, and swallowed exceptions. |
 
+## Recorded synthetic interruption/recovery
+
+[Reproducible terminal example](docs/RECOVERY_DEMO.md) shows **real BATON CLI
+subprocesses** detecting an unfinished tool call in a fabricated transcript,
+then reconstructing bounded session context when a new `SessionStart` hook
+receives an almost-empty transcript. Run
+`python -B tests/record_recovery_demo.py` to print the tested result.
+GitHub Actions runs that example on every applicable change.
+
+This demonstrates the implemented recovery logic, **not** a captured live
+Claude Code crash or full cross-pod/session-version acceptance.
+
 ## Testing & safety
 
 - `tests/selfcheck.sh` is the acceptance floor: it verifies `baton.py` compiles, both hooks return valid JSON and exit 0 even on garbage/empty/real stdin, and `pickup` stays under its token budget and latency ceiling.
