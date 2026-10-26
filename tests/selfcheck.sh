@@ -129,5 +129,10 @@ rm -rf "$VOL_TESTDIR"
 $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_*redaction.py' -q \
   || bad "redaction regression tests failed"
 
+# 11. A trap must not be marked seen unless its warning was delivered.
+# Test >5 simultaneous matches across repeated real PreToolUse hook calls.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_trap_delivery.py' -q \
+  || bad "PreToolUse trap-delivery regression tests failed"
+
 if [ "$FAIL" -eq 0 ]; then say "ALL PASS"; else say "FAILURES ABOVE"; fi
 exit $FAIL

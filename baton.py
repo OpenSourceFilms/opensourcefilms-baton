@@ -1122,17 +1122,22 @@ def cmd_pretool(args):
         new_matches = [t for t in matches if t.get("id") not in seen]
 
         if new_matches:
+            # Only acknowledge warnings included in this hook response.
+            # Otherwise six matching traps would display five while all six
+            # were marked seen, permanently hiding the sixth this session.
+            delivered = new_matches[:5]
             lines = []
-            for t in new_matches[:5]:
+            for t in delivered:
                 lines.append(f"[TRAP {t.get('id','?')}] {t.get('what','')} — {t.get('why','')} Rule: {t.get('rule','')}")
             context = redact("\n".join(lines))
-            mark_seen(session_id, [t.get("id") for t in new_matches])
+            delivered_ids = [t.get("id") for t in delivered]
+            mark_seen(session_id, delivered_ids)
             audit_write({
                 "kind": "pretool_fire",
                 "session_id": session_id,
                 "project": project,
                 "tool": tool_name,
-                "traps": [t.get("id") for t in new_matches],
+                "traps": delivered_ids,
                 "swallowed": _SWALLOWED[0],
             })
     except Exception:
