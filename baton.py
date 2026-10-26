@@ -1057,6 +1057,67 @@ def cmd_status(args):
     print(render_status(root))
 
 
+# Manual commands do not receive Claude Code's transcript_path hook field.
+# A globally newest transcript may belong to a completely unrelated project.
+# Prove association using the cwd metadata in that session's own JSONL events
+# before using it to label NOW suspect or reconstruct interrupted work.
+CLAUDE_TRANSCRIPTS_GLOB = "/workspace/.claude/projects/*/*.jsonl"
+MANUAL_TRANSCRIPT_MARKER_LINES = 32
+MANUAL_TRANSCRIPT_MAX_LINE_BYTES = 64 * 1024
+
+
+def _transcript_belongs_to_project(path, root):
+    """Bounded cwd check; missing/ambiguous evidence never implies ownership.
+
+    Claude JSONL event formats are not stable. Inspect a few early records for
+    cwd rather than trusting an encoded project directory slug, which can
+    collide for distinct paths. A child working directory belongs to its git
+    project root, but a similarly prefixed sibling does not.
+    """
+    project = os.path.realpath(root)
+    try:
+        found = False
+        with open(path, "rb") as stream:
+            for _ in range(MANUAL_TRANSCRIPT_MARKER_LINES):
+                line = stream.readline(MANUAL_TRANSCRIPT_MAX_LINE_BYTES + 1)
+                if not line:
+                    break
+                if len(line) > MANUAL_TRANSCRIPT_MAX_LINE_BYTES:
+                    return False
+                try:
+                    event = json.loads(line)
+                except (ValueError, UnicodeError):
+                    continue
+                if not isinstance(event, dict) or "cwd" not in event:
+                    continue
+                cwd = event["cwd"]
+                if not isinstance(cwd, str) or not os.path.isabs(cwd):
+                    return False
+                candidate = os.path.realpath(cwd)
+                if os.path.commonpath([project, candidate]) != project:
+                    return False
+                found = True
+        return found
+    except (OSError, ValueError, RuntimeError):
+        return False
+
+
+def latest_project_transcript(root):
+    """Most recent provably project-scoped transcript, or None.
+
+    This fallback is only for interactive commands. SessionStart continues
+    using the transcript_path explicitly supplied by Claude Code's hook.
+    """
+    candidates = sorted(
+        glob.glob(CLAUDE_TRANSCRIPTS_GLOB),
+        key=lambda p: safe(lambda: os.path.getmtime(p), 0), reverse=True,
+    )
+    for path in candidates:
+        if _transcript_belongs_to_project(path, root):
+            return path
+    return None
+
+
 def cmd_now(args):
     root = find_project_root(os.getcwd())
     baton_md = os.path.join(root, "BATON.md")
@@ -1066,26 +1127,21 @@ def cmd_now(args):
     text = Path(baton_md).read_text(errors="replace")
     sections = parse_baton_md_sections(text)
     now = sections.get("NOW", "(no NOW section)")
-    events = []
-    transcripts = sorted(
-        glob.glob("/workspace/.claude/projects/*/*.jsonl"),
-        key=lambda p: safe(lambda: os.path.getmtime(p), 0), reverse=True,
-    )
-    if transcripts:
-        events = load_transcript_events(transcripts[0])
+    # An explicitly selected transcript is a deliberate caller override.
+    # Automatic discovery must never borrow another project's history.
+    transcript = args[0] if args else latest_project_transcript(root)
+    events = load_transcript_events(transcript) if transcript else []
     print(mark_now_suspect(now, events))
+    if not transcript:
+        print("(NOW execution not checked: no verified project transcript)")
 
 
 def cmd_pickup(args):
     root = find_project_root(os.getcwd())
-    transcript = args[0] if args else None
-    if not transcript:
-        candidates = sorted(
-            glob.glob("/workspace/.claude/projects/*/*.jsonl"),
-            key=lambda p: safe(lambda: os.path.getmtime(p), 0), reverse=True,
-        )
-        transcript = candidates[0] if candidates else None
+    transcript = args[0] if args else latest_project_transcript(root)
     print(build_pickup(root, transcript))
+    if not transcript:
+        eprint("BATON: no verified project transcript; interrupted-session context omitted")
 
 
 def cmd_hook(args):
