@@ -587,23 +587,43 @@ def probe_project_jobs(root):
         return ["jobs: .baton/probes.json 'jobs' is not a list"]
     out = []
     for e in entries[:20]:
-        name = e.get("name", "?")
-        artifact = e.get("artifact", "")
-        path = artifact if os.path.isabs(artifact) else os.path.join(root, artifact)
-        if not os.path.exists(path):
-            out.append(f"job {name}: MISSING ({artifact})")
+        # This feeds the SessionStart reality summary. A malformed *single*
+        # job entry must never raise into render_status()'s safe(..., [])
+        # wrapper and silently suppress all otherwise valid job warnings.
+        if not isinstance(e, dict):
+            out.append("job ?: malformed entry")
             continue
-        size = os.path.getsize(path)
-        mtime = os.path.getmtime(path)
-        age_s = time.time() - mtime
-        status = "empty" if size == 0 else "present"
-        newer_note = ""
+        name = e.get("name", "?")
+        if not isinstance(name, str) or not name.strip():
+            out.append("job ?: malformed name")
+            continue
+        artifact = e.get("artifact")
+        if not isinstance(artifact, str) or not artifact:
+            out.append(f"job {name}: missing/invalid artifact path")
+            continue
         newer_than = e.get("newer_than")
-        if newer_than:
-            ref = newer_than if os.path.isabs(newer_than) else os.path.join(root, newer_than)
-            if os.path.exists(ref) and mtime < os.path.getmtime(ref):
-                newer_note = " — STALE vs " + newer_than
-        out.append(f"job {name}: {status}, {int(age_s)}s old{newer_note}")
+        if newer_than is not None and not isinstance(newer_than, str):
+            out.append(f"job {name}: invalid newer_than path")
+            continue
+        try:
+            path = artifact if os.path.isabs(artifact) else os.path.join(root, artifact)
+            if not os.path.exists(path):
+                out.append(f"job {name}: MISSING ({artifact})")
+                continue
+            size = os.path.getsize(path)
+            mtime = os.path.getmtime(path)
+            age_s = time.time() - mtime
+            status = "empty" if size == 0 else "present"
+            newer_note = ""
+            if newer_than:
+                ref = newer_than if os.path.isabs(newer_than) else os.path.join(root, newer_than)
+                if os.path.exists(ref) and mtime < os.path.getmtime(ref):
+                    newer_note = " — STALE vs " + newer_than
+            out.append(f"job {name}: {status}, {int(age_s)}s old{newer_note}")
+        except (OSError, ValueError):
+            # Artifact may disappear between exists() and stat(). Keep other
+            # entries observable; never print a raw OS exception with paths.
+            out.append(f"job {name}: unavailable while probing")
     return out
 
 

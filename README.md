@@ -10,6 +10,7 @@ When a session is interrupted or compacted, an agent must reconstruct its world 
 
 BATON operates in three tiers:
 
+- **Artifact probe isolation:** Each entry in a project's `.baton/probes.json` `jobs` list now reports malformed names, missing/invalid artifact paths and unreadable outputs individually. One bad entry cannot silently erase other valid missing/stale job warnings from Tier 0. Six synthetic regressions exercise the actual probe and status renderer; no live GPU jobs or project artifacts are touched.
 - **Tier 0: Environment facts, regenerated fresh every session start.** Git branch/dirty state, per-venv Python interpreter resolution, GPU liveness via an actual compute operation (`torch.randn(4,4).to('cuda')`, never a presence-check like `torch.cuda.is_available()`), background job status checked by artifact effect, not exit code. These are never trusted from a stale write; they are always current.
 
 - **Tier 1: `BATON.md`, a single project task-file hard-capped at 120 lines.** Sections: `MISSION`, `NOW` (exactly one next action), `MODEL/ROUTING`, `IN-FLIGHT`, `BLOCKED`, `OPEN`, `TRAPS`. Superseding-on-write, not append-only. TRAPS is deliberately the highest-value section.
