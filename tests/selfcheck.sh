@@ -124,5 +124,10 @@ out=$(cd "$VOL_TESTDIR" && $PY "$BATON" status 2>/dev/null); rc=$?
 echo "$out" | grep -qi "volatile" && bad "volatile probe: zero VOLATILE lines still produced volatile-related output"
 rm -rf "$VOL_TESTDIR"
 
+# 10. Redaction must not reinject synthetic credential-shaped strings as session context.
+# Uses fabricated tokens and exercises the actual single-file baton.py implementation.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_redaction.py' -q \
+  || bad "redaction regression tests failed"
+
 if [ "$FAIL" -eq 0 ]; then say "ALL PASS"; else say "FAILURES ABOVE"; fi
 exit $FAIL

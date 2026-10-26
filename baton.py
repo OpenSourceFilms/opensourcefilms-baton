@@ -40,6 +40,12 @@ VENV_SEARCH_ROOTS_GLOBAL = [
 ]
 
 REDACTION_PATTERNS = [
+    # Redact credential-bearing URLs before matching individual tokens. A raw
+    # tool argument can include user:password@host without a named secret key.
+    re.compile(r"(?i)\b(?:https?|ftp|sftp)://[^\s/@:?#]+:[^\s/@?#]+@[^\s/?#]+(?:[^\s]*)?"),
+    # Common bare access tokens often appear without 'token=' or 'Bearer'.
+    # Do not retain the prefix or partial token in injected session context.
+    re.compile(r"\b(?:github_pat_[A-Za-z0-9_]{35,}|gh[pousr]_[A-Za-z0-9]{25,}|hf_[A-Za-z0-9]{24,})\b"),
     re.compile(r"sk-[A-Za-z0-9_\-]{8,}"),
     re.compile(r"(?i)\b(api[_-]?key|apikey|secret|token|password|passwd)\s*[:=]\s*[\"']?[A-Za-z0-9_\-\.]{6,}[\"']?"),
     re.compile(r"(?i)\bbearer\s+[A-Za-z0-9_\-\.]{8,}"),

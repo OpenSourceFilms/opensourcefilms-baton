@@ -97,6 +97,7 @@ All commands are from `baton.py`'s subcommand table. No arguments implies `picku
 ## Testing & safety
 
 - `tests/selfcheck.sh` is the acceptance floor: it verifies `baton.py` compiles, both hooks return valid JSON and exit 0 even on garbage/empty/real stdin, and `pickup` stays under its token budget and latency ceiling.
+- Redaction regression tests run within that self-check. BATON's interrupted-session diagnostic and pretool context redaction now covers bare GitHub/Hugging Face token formats and credential-bearing URLs, in addition to existing bearer/key-value patterns. Fixtures are fabricated. This is **best-effort masking**, not a credential vault, a complete secret scanner or permission to store secrets in `BATON.md` or transcripts.
 - `tests/pre-commit.sh` can be installed as a git pre-commit hook (`cp tests/pre-commit.sh .git/hooks/pre-commit`). It blocks any commit where `baton.py` fails selfcheck **or** the staged diff contains an API-key-shaped string, a real safeguard that has caught a leaked-credential-shaped string in practice, not a decorative check.
 
 BATON is designed to degrade safely: a hook failure, missing binary, or unexpected transcript format means the session proceeds entirely normally, just without the assist. It may never block, gate, or nag.
