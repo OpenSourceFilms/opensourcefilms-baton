@@ -112,6 +112,11 @@ All commands are from `baton.py`'s subcommand table. No arguments implies `picku
 | `baton now` | Show or manage the single `NOW` item; auto-flags it `SUSPECT` if the transcript shows it was already executed. |
 | `baton trap` | Record a new path-keyed negative-knowledge entry in `traps.jsonl`. |
 | `baton block <description>` | Append an item to the `BLOCKED` section of `BATON.md`. |
+| `baton hook` | The `SessionStart` hook entrypoint (used by `settings.json`, not typically run manually). |
+| `baton pretool` | The `PreToolUse` hook entrypoint; injects matching traps for the turn. |
+| `baton recall <query>` | Query the archive. Currently a thin wrapper over a local RTFM search index if one is present; degrades to `(no index)` otherwise; recall is not a bundled/required component. |
+| `baton audit <days>` | Health-check BATON's own operation over the last N days: checks for truncation, stale `SUSPECT` markers, noisy traps, and swallowed exceptions. |
+
 **Manual transcript isolation:** `baton now` and `baton pickup` without
 a supplied transcript now consider only sessions whose early JSONL `cwd`
 metadata associates them with the current git project. An unrelated session
@@ -126,11 +131,6 @@ transcript state. Supply a transcript explicitly with
 The `SessionStart` hook uses the transcript path supplied by Claude Code,
 unchanged. This is a conservative context association check, not a
 cryptographic transcript-authenticity guarantee.
-
-| `baton hook` | The `SessionStart` hook entrypoint (used by `settings.json`, not typically run manually). |
-| `baton pretool` | The `PreToolUse` hook entrypoint; injects matching traps for the turn. |
-| `baton recall <query>` | Query the archive. Currently a thin wrapper over a local RTFM search index if one is present; degrades to `(no index)` otherwise; recall is not a bundled/required component. |
-| `baton audit <days>` | Health-check BATON's own operation over the last N days: checks for truncation, stale `SUSPECT` markers, noisy traps, and swallowed exceptions. |
 
 ## Recorded synthetic interruption/recovery
 
