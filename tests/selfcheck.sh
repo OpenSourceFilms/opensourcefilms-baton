@@ -139,5 +139,10 @@ $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_trap_delivery.py' -q
 $PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_artifact_probes.py' -q \
   || bad "artifact job probe isolation tests failed"
 
+# 13. Manual now/pickup must not borrow newer unrelated project transcripts.
+# All transcript payloads, paths and timestamps are synthetic.
+$PY -B -m unittest discover -s "$SCRIPT_DIR" -p 'test_baton_manual_transcript_isolation.py' -q \
+  || bad "manual project transcript isolation tests failed"
+
 if [ "$FAIL" -eq 0 ]; then say "ALL PASS"; else say "FAILURES ABOVE"; fi
 exit $FAIL

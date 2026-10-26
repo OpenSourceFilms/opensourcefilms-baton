@@ -120,6 +120,21 @@ All commands are from `baton.py`'s subcommand table. No arguments implies `picku
 | `baton recall <query>` | Query the archive. Currently a thin wrapper over a local RTFM search index if one is present; degrades to `(no index)` otherwise; recall is not a bundled/required component. |
 | `baton audit <days>` | Health-check BATON's own operation over the last N days: checks for truncation, stale `SUSPECT` markers, noisy traps, and swallowed exceptions. |
 
+**Manual transcript isolation:** `baton now` and `baton pickup` without
+a supplied transcript now consider only sessions whose early JSONL `cwd`
+metadata associates them with the current git project. An unrelated session
+must not mark this project's task as `SUSPECT` or contribute interrupted
+execution state. If a transcript lacks `cwd` evidence, has conflicting
+project markers or unparseable overlong early events, it is not selected.
+When none can be verified, `now` explicitly says execution was not checked;
+`pickup` still emits local project status and task notes but no inferred
+transcript state. Supply a transcript explicitly with
+`baton now /path/to/session.jsonl` or
+`baton pickup /path/to/session.jsonl` to override automatic discovery.
+The `SessionStart` hook uses the transcript path supplied by Claude Code,
+unchanged. This is a conservative context association check, not a
+cryptographic transcript-authenticity guarantee.
+
 ## Recorded synthetic interruption/recovery
 
 [Reproducible terminal example](docs/RECOVERY_DEMO.md) shows **real BATON CLI
